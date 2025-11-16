@@ -1,6 +1,7 @@
 import './App.css'
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 // Your web app's Firebase configuration
@@ -19,9 +20,12 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 function App() {
   const [name, setName] = useState();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     // Update specific details
@@ -43,9 +47,64 @@ function App() {
     testFirestore();
   }, []) //empty array to prevent from running over and over
 
+
+  // Sign Up
+  const signUp = () => {
+    createUserWithEmailAndPassword(auth, email, password)
+    .then(userCredential => {
+      setUser(userCredential.user);
+      console.log('User signed up:', userCredential.user);
+    })
+    .catch(error => {
+      console.log('Error signing up:', error)
+    })
+  }
+
+  // Sign In
+  const signIn = () => {
+    createUserWithEmailAndPassword(auth, email, password)
+    .then(userCredential => {
+      setUser(userCredential.user);
+      console.log('User signed up:', userCredential.user);
+    })
+    .catch(error => {
+      console.log('Error signing up:', error)
+    })
+  }
+  
+  // Sign Out
+  const logOut = () => {
+    signOut(auth)
+    .then(() => {
+      setUser(null);
+      console.log('User signed out');
+    })
+    .catch(error => {
+      console.error('Error signing out:', error);
+    })
+  }
+
+
   return (
     <>
-      <p>Firestore Check {name}</p>
+      <p>Firestore Authentication</p>
+
+      <div>
+        <input type="text" placeholder='Email' value={email} onChange={(event) => setEmail(event.target.value)}/>
+        <input type="password" placeholder='Password' value={password} onChange={(event) => setPassword(event.target.value)} />
+        <button onClick={signUp}>Sign Up</button>
+        <button onClick={signIn}>Sign In</button>
+        <button onClick={logOut}>Sign Out</button>
+      </div>
+
+      {
+        user && (
+          <div>
+            <p>Logged in as: {user.email}</p>
+          </div>
+        )
+      }
+
     </>
   )
 }
