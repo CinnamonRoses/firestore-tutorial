@@ -1,7 +1,7 @@
 import './App.css'
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 // Your web app's Firebase configuration
@@ -23,30 +23,23 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 function App() {
-  const [name, setName] = useState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Update specific details
-    async function testFirestore() {
-      const docRef = doc(db, "testCollection", "testDocument");
-      const docSnap = await getDoc(docRef);
-
-      await updateDoc(docRef, {
-        age: "9002",
-        name: "Mary Poppins ++++"
-      })
-
-      if (docSnap.exists()) {
-        setName(docSnap.data().name);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        // User is signed in
+        setUser(currentUser);
       } else {
-        console.log("No such document!");
+        // User is signed out
+        setUser(null);
       }
-    }
-    testFirestore();
-  }, []) //empty array to prevent from running over and over
+    })
 
+    return () => unsubscribe();
+  })
 
   // Sign Up
   const signUp = () => {
@@ -62,13 +55,13 @@ function App() {
 
   // Sign In
   const signIn = () => {
-    createUserWithEmailAndPassword(auth, email, password)
+    signInWithEmailAndPassword(auth, email, password)
     .then(userCredential => {
       setUser(userCredential.user);
-      console.log('User signed up:', userCredential.user);
+      console.log('User has signed in:', userCredential.user);
     })
     .catch(error => {
-      console.log('Error signing up:', error)
+      console.log('Error signing out:', error)
     })
   }
   
@@ -90,17 +83,23 @@ function App() {
       <p>Firestore Authentication</p>
 
       <div>
-        <input type="text" placeholder='Email' value={email} onChange={(event) => setEmail(event.target.value)}/>
+        {
+          !user && (
+            <>
+            <input type="text" placeholder='Email' value={email} onChange={(event) => setEmail(event.target.value)}/>
         <input type="password" placeholder='Password' value={password} onChange={(event) => setPassword(event.target.value)} />
-        <button onClick={signUp}>Sign Up</button>
-        <button onClick={signIn}>Sign In</button>
-        <button onClick={logOut}>Sign Out</button>
+              <button onClick={signUp}>Sign Up</button>
+              <button onClick={signIn}>Sign In</button>
+            </>
+          )
+        }
       </div>
 
       {
         user && (
           <div>
             <p>Logged in as: {user.email}</p>
+            <button onClick={logOut}>Sign Out</button>
           </div>
         )
       }
